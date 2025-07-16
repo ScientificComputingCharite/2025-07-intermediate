@@ -17,6 +17,12 @@ def load_csv(filename):
     """
     return np.loadtxt(fname=filename, delimiter=',')
 
+def load_inflammation_data(data_file_paths):
+    if len(data_file_paths) == 0:
+        raise ValueError(f"No inflammation data CSV files found in path {data_dir}")
+    data = map(load_csv, data_file_paths)
+    return list(data)
+
 
 def daily_mean(data):
     """Calculate the daily mean of a 2d inflammation data array."""
