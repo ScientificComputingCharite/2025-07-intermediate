@@ -8,6 +8,9 @@ and each column represents a single day across all patients.
 """
 
 import numpy as np
+import json
+from glob import glob
+import os
 
 
 def load_csv(filename):
@@ -18,22 +21,48 @@ def load_csv(filename):
     return np.loadtxt(fname=filename, delimiter=',')
 
 
-def daily_mean(data):
-    """Calculate the daily mean of a 2D inflammation data array."""
-    return np.mean(data, axis=0)
 
+class DataLoader:
+    def __init__(self, fname):
+        self.fname = fname
+        self._data = None
 
-def daily_max(data):
-    """Calculate the daily max of a 2D inflammation data array."""
-    return np.max(data, axis=0)
+    def get_data(self):
+        raise NotImplementedError
 
+    @property
+    def data(self):
+        if self._data is None:
+            self._data = self.get_data()
+        return self._data
 
-def daily_min(data):
-    """Calculate the daily min of a 2D inflammation data array."""
-    return np.min(data, axis=0)
+    @property
+    def daily_mean(self):
+        return np.mean(self.data, axis=0)
 
+    @property
+    def daily_min(self):
+        return np.min(self.data, axis=0)
+    
+    @property
+    def daily_max(self):
+        return np.mean(self.data, axis=0)
 
-def patient_normalise(data):
-    """Normalise patient data from a 2D inflammation data array."""
-    max = np.max(data, axis=1)
-    return data / max[:, np.newaxis]
+    @property
+    def view_data(self):
+        return {
+            "average": self.daily_mean,
+            "max": self.daily_max,
+            "min": self.daily_min,
+        }
+
+class CSVLoader(DataLoader):
+    def get_data(self):
+        return np.loadtxt(fname=self.fname, delimiter=',')
+
+class JSONLoader(DataLoader):
+    def get_data(self):
+        with open(self.fname, 'r', encoding='utf-8') as file:
+            data_as_json = json.load(file)
+        return [np.array(entry['observations']) for entry in data_as_json]
+
